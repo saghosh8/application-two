@@ -1,0 +1,12 @@
+replicaCount: 2
+
+image:
+  tag: "2.0.0"
+
+environment:
+  SPRING_PROFILES_ACTIVE: dev
+
+features:
+  notification: true
+  audit: true
+  databaseChange: false

@@ -1,0 +1,13 @@
+{
+  "application": "application-two",
+  "release": {
+    "version": "2.0.0",
+    "environment": "dev",
+    "databaseChange": false
+  },
+  "deploymentRules": {
+    "createReleaseBranch": true,
+    "createPullRequest": true,
+    "requiresAuditValidation": true
+  }
+}
