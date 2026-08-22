@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "application-two.fullname" . }}-config
+data:
+  APP_VERSION: {{ .Values.environment.APP_VERSION | quote }}
+  SPRING_PROFILES_ACTIVE: {{ .Values.environment.SPRING_PROFILES_ACTIVE | quote }}
+  NOTIFICATION_ENABLED: {{ .Values.features.notification | quote }}
+  AUDIT_ENABLED: {{ .Values.features.audit | quote }}
+  DATABASE_CHANGE: {{ .Values.features.databaseChange | quote }}
