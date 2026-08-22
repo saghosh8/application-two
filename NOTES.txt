@@ -1,0 +1,5 @@
+Application Two has been deployed.
+
+Environment: {{ .Values.environment.SPRING_PROFILES_ACTIVE }}
+Version: {{ .Values.image.tag }}
+Replicas: {{ .Values.replicaCount }}
