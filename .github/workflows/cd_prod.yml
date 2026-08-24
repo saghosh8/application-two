@@ -50,6 +50,7 @@ jobs:
             --namespace prod \
             --set image.repository=${{ env.IMAGE_NAME }} \
             --set fullnameOverride=application-two \
+            --set autoscaling.enabled=false \
             --set image.tag=${{ steps.resolve.outputs.short_sha }} \
             --wait --timeout 180s
 
