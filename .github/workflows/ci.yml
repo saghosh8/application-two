@@ -72,3 +72,12 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.short_sha }}
+
+      - name: Show build tag
+        run: |
+          echo "Build TAG: ${{ steps.vars.outputs.short_sha }}"
+          echo "## Build TAG: \`${{ steps.vars.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Use this tag as the \`image_tag\` input when running CD - Dev / CD - UAT." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Image: \`${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
