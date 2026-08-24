@@ -4,7 +4,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
 
 jobs:
   test:
@@ -36,10 +36,10 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Lint chart
-        run: helm lint helm/application-two
+        run: helm lint helm/${{ github.event.repository.name }}
 
       - name: Render templates (sanity check)
-        run: helm template application-two helm/application-two -f helm/application-two/values-dev.yaml
+        run: helm template ${{ github.event.repository.name }} helm/${{ github.event.repository.name }} -f helm/${{ github.event.repository.name }}/values-dev.yaml
 
   publish:
     name: Build & Push Image
