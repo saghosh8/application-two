@@ -8,7 +8,7 @@ on:
         required: true
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
 
 jobs:
   deploy-prod:
@@ -45,11 +45,11 @@ jobs:
 
       - name: Deploy chart to prod
         run: |
-          helm upgrade --install application-two ./helm/application-two \
-            -f ./helm/application-two/values-prod.yaml \
+          helm upgrade --install ${{ github.event.repository.name }} ./helm/${{ github.event.repository.name }} \
+            -f ./helm/${{ github.event.repository.name }}/values-prod.yaml \
             --namespace prod \
             --set image.repository=${{ env.IMAGE_NAME }} \
-            --set fullnameOverride=application-two \
+            --set fullnameOverride=${{ github.event.repository.name }} \
             --set autoscaling.enabled=false \
             --set image.tag=${{ steps.resolve.outputs.short_sha }} \
             --wait --timeout 180s
@@ -76,4 +76,4 @@ jobs:
           kubectl get deployment,svc,hpa -n prod
           echo
           echo "=== Replica count (from values-prod.yaml, autoscaling 4-10) ==="
-          kubectl get deployment application-two -n prod -o jsonpath='{.spec.replicas}'
+          kubectl get deployment ${{ github.event.repository.name }} -n prod -o jsonpath='{.spec.replicas}'
