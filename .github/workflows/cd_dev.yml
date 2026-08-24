@@ -1,0 +1,50 @@
+name: CD - Dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g. commit short SHA from CI, or "latest")'
+        required: true
+        default: 'latest'
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
+
+jobs:
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: demo-dev
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Create dev namespace
+        run: kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy chart to dev
+        run: |
+          helm upgrade --install application-two ./helm/application-two \
+            -f ./helm/application-two/values-dev.yaml \
+            --namespace dev \
+            --set image.repository=${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ github.event.inputs.image_tag }} \
+            --wait --timeout 90s
+
+      - name: Show what got deployed
+        run: |
+          echo "=== Pods in dev ==="
+          kubectl get pods -n dev -o wide
+          echo
+          echo "=== Deployment summary ==="
+          kubectl get deployment,svc,hpa -n dev
+          echo
+          echo "=== Replica count (from values-dev.yaml) ==="
+          kubectl get deployment application-two -n dev -o jsonpath='{.spec.replicas}'
