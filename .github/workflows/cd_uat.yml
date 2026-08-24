@@ -35,6 +35,7 @@ jobs:
             -f ./helm/application-two/values-uat.yaml \
             --namespace uat \
             --set image.repository=${{ env.IMAGE_NAME }} \
+            --set fullnameOverride=application-two \
             --set image.tag=${{ github.event.inputs.image_tag }} \
             --wait --timeout 90s
 
