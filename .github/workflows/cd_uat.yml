@@ -1,0 +1,50 @@
+name: CD - UAT
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g. commit short SHA from CI, or "latest")'
+        required: true
+        default: 'latest'
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
+
+jobs:
+  deploy-uat:
+    name: Deploy to UAT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: demo-uat
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Create uat namespace
+        run: kubectl create namespace uat --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy chart to uat
+        run: |
+          helm upgrade --install application-two ./helm/application-two \
+            -f ./helm/application-two/values-uat.yaml \
+            --namespace uat \
+            --set image.repository=${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ github.event.inputs.image_tag }} \
+            --wait --timeout 90s
+
+      - name: Show what got deployed
+        run: |
+          echo "=== Pods in uat ==="
+          kubectl get pods -n uat -o wide
+          echo
+          echo "=== Deployment summary ==="
+          kubectl get deployment,svc,hpa -n uat
+          echo
+          echo "=== Replica count (from values-uat.yaml) ==="
+          kubectl get deployment application-two -n uat -o jsonpath='{.spec.replicas}'
