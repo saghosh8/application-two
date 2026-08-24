@@ -3,9 +3,10 @@ name: CD - Prod
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: 'Release tag to deploy (e.g. 1.0.0-release-81269a6)'
-        required: true
+      image_tag:        # ← actual input name
+        type: string
+      environment:      # ← actual input name
+        type: string
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
