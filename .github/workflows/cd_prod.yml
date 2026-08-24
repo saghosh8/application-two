@@ -52,6 +52,7 @@ jobs:
             -f ./helm/application-two/values-prod.yaml \
             --namespace prod \
             --set image.repository=${{ env.IMAGE_NAME }} \
+            --set fullnameOverride=application-two \
             --set image.tag=${{ steps.resolve.outputs.short_sha }} \
             --wait --timeout 90s
 
