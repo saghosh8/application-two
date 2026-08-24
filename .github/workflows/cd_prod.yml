@@ -1,0 +1,68 @@
+name: CD - Prod
+
+on:
+  push:
+    tags:
+      - '*-release-*'          # matches tags like 1.0.0-release-81269a6
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to deploy (e.g. 1.0.0-release-81269a6)'
+        required: true
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
+
+jobs:
+  deploy-prod:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release tag and commit SHA
+        id: resolve
+        run: |
+          TAG="${{ github.event.inputs.release_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          # release tag format: <version>-release-<short-sha>
+          SHORT_SHA="${TAG##*-}"
+          VERSION="${TAG%-release-*}"
+          echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying release: $TAG (version $VERSION, commit $SHORT_SHA)"
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: demo-prod
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Create prod namespace
+        run: kubectl create namespace prod --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy chart to prod
+        run: |
+          helm upgrade --install application-two ./helm/application-two \
+            -f ./helm/application-two/values-prod.yaml \
+            --namespace prod \
+            --set image.repository=${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ steps.resolve.outputs.short_sha }} \
+            --wait --timeout 90s
+
+      - name: Show what got deployed
+        run: |
+          echo "=== Deployed release: ${{ steps.resolve.outputs.release_tag }} ==="
+          echo "=== Pods in prod ==="
+          kubectl get pods -n prod -o wide
+          echo
+          echo "=== Deployment, Service, HPA ==="
+          kubectl get deployment,svc,hpa -n prod
+          echo
+          echo "=== Replica count (from values-prod.yaml, autoscaling 4-10) ==="
+          kubectl get deployment application-two -n prod -o jsonpath='{.spec.replicas}'

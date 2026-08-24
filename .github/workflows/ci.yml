@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   workflow_dispatch: {}
@@ -59,6 +59,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
@@ -67,3 +71,4 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.short_sha }}
