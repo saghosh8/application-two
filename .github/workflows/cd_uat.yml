@@ -9,7 +9,7 @@ on:
         default: 'latest'
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/application-two
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
 
 jobs:
   deploy-uat:
@@ -31,11 +31,11 @@ jobs:
 
       - name: Deploy chart to uat
         run: |
-          helm upgrade --install application-two ./helm/application-two \
-            -f ./helm/application-two/values-uat.yaml \
+          helm upgrade --install ${{ github.event.repository.name }} ./helm/${{ github.event.repository.name }} \
+            -f ./helm/${{ github.event.repository.name }}/values-uat.yaml \
             --namespace uat \
             --set image.repository=${{ env.IMAGE_NAME }} \
-            --set fullnameOverride=application-two \
+            --set fullnameOverride=${{ github.event.repository.name }} \
             --set image.tag=${{ github.event.inputs.image_tag }} \
             --wait --timeout 90s
 
@@ -48,4 +48,4 @@ jobs:
           kubectl get deployment,svc,hpa -n uat
           echo
           echo "=== Replica count (from values-uat.yaml) ==="
-          kubectl get deployment application-two -n uat -o jsonpath='{.spec.replicas}'
+          kubectl get deployment ${{ github.event.repository.name }} -n uat -o jsonpath='{.spec.replicas}'
