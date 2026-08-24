@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   workflow_dispatch: {}
@@ -44,7 +44,7 @@ jobs:
   publish:
     name: Build & Push Image
     needs: [test, helm-lint]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/feature/')
     runs-on: ubuntu-latest
     permissions:
       contents: read
