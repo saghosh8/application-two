@@ -7,6 +7,11 @@ on:
         description: 'Image tag to deploy (e.g. commit short SHA from CI, or "latest")'
         required: true
         default: 'latest'
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches:
+      - 'feature/**'
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
@@ -15,8 +20,36 @@ jobs:
   deploy-dev:
     name: Deploy to Dev
     runs-on: ubuntu-latest
+    # For a manual run, always proceed. For an auto-run after CI, only proceed if CI succeeded.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
+        with:
+          # workflow_run does not checkout the triggering commit by default - set it explicitly
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Resolve image tag
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            TAG="$(echo '${{ github.event.workflow_run.head_sha }}' | cut -c1-7)"
+          else
+            TAG="${{ github.event.inputs.image_tag }}"
+          fi
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Show inputs
+        run: |
+          {
+            echo "### Run details"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| repository | ${{ github.event.repository.name }} |"
+            echo "| branch | ${{ github.event.workflow_run.head_branch || github.ref_name }} |"
+            echo "| triggered_by | ${{ github.event_name }} |"
+            echo "| image_tag | ${{ steps.resolve.outputs.image_tag }} |"
+          } >> $GITHUB_STEP_SUMMARY
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.10.0
@@ -36,7 +69,7 @@ jobs:
             --namespace dev \
             --set image.repository=${{ env.IMAGE_NAME }} \
             --set fullnameOverride=${{ github.event.repository.name }} \
-            --set image.tag=${{ github.event.inputs.image_tag }} \
+            --set image.tag=${{ steps.resolve.outputs.image_tag }} \
             --wait --timeout 90s
 
       - name: Show what got deployed
