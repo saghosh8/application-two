@@ -16,11 +16,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Show inputs
         run: |
-          echo '${{ toJSON(github.event.inputs) }}' | jq -r 'to_entries[] | "\(.key): \(.value)"'
-          
+          {
+            echo "### Run details"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| repository | ${{ github.event.repository.name }} |"
+            echo "| branch | ${{ github.ref_name }} |"
+            echo '${{ toJSON(github.event.inputs) }}' | jq -r '(. // {}) | to_entries[] | select(.key != "branch") | "| \(.key) | \(.value) |"'
+          } >> $GITHUB_STEP_SUMMARY
+
       - name: Resolve release tag and commit SHA
         id: resolve
         run: |
