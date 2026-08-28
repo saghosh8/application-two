@@ -19,8 +19,7 @@ jobs:
           {
             printf "repository\t: %s\n" "${{ github.event.repository.name }}"
             printf "branch\t: %s\n" "${{ github.ref_name }}"
-            echo '${{ toJSON(github.event.inputs) }}' | jq -r 'to_entries[] | select(.key != "branch") | "\(.key)\t: \(.value)"'
-            printf "environment\t: %s\n" "prod"
+            echo '${{ toJSON(github.event.inputs) }}' | jq -r '(. // {}) | to_entries[] | select(.key != "branch") | "\(.key)\t: \(.value)"'
           } | column -t -s $'\t'
           echo "############################################################"
           
