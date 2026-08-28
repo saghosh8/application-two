@@ -18,6 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Show inputs
+        run: |
+          {
+            echo "### Run details"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| repository | ${{ github.event.repository.name }} |"
+            echo "| branch | ${{ github.ref_name }} |"
+            echo '${{ toJSON(github.event.inputs) }}' | jq -r '(. // {}) | to_entries[] | select(.key != "branch") | "| \(.key) | \(.value) |"'
+          } >> $GITHUB_STEP_SUMMARY
+
       - name: Create kind cluster
         uses: helm/kind-action@v1.10.0
         with:
