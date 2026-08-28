@@ -12,7 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      
+      - name: Show inputs
+        run: |
+          echo "############################################################"
+          {
+            printf "repository\t: %s\n" "${{ github.event.repository.name }}"
+            printf "branch\t: %s\n" "${{ github.ref_name }}"
+            echo '${{ toJSON(github.event.inputs) }}' | jq -r 'to_entries[] | select(.key != "branch") | "\(.key)\t: \(.value)"'
+            printf "environment\t: %s\n" "prod"
+          } | column -t -s $'\t'
+          echo "############################################################"
+          
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
